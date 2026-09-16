@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JLPT N4 日語單字大師</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-indigo-600 p-2.5 rounded-xl shadow-sm font-black text-xl flex items-center justify-center">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">JLPT N4 真實日語單字大全</h1>
+                    <p class="text-xs text-indigo-200">內建標準日語發音・單字卡・測驗練習</p>
+                </div>
+            </div>
+            <div class="text-xs bg-indigo-700 px-3 py-1.5 rounded-xl border border-indigo-500/40">
+                總單字數: <span id="total-count" class="font-bold text-white">668</span> 筆
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center overflow-x-auto">
+            <div class="flex space-x-1 py-2">
+                <button onclick="switchMode('list')" id="nav-list" class="mode-btn px-4 py-2 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-600 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-list"></i><span>單字列表</span>
+                </button>
+                <button onclick="switchMode('flashcard')" id="nav-flashcard" class="mode-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-clone"></i><span>單字卡模式</span>
+                </button>
+                <button onclick="switchMode('quiz')" id="nav-quiz" class="mode-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-circle-question"></i><span>測驗挑戰</span>
+                </button>
+                <button onclick="switchMode('bookmarks')" id="nav-bookmarks" class="mode-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-bookmark"></i><span>收藏夾 (<span id="bookmark-count">0</span>)</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- 1. LIST VIEW -->
+        <section id="view-list" class="space-y-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div class="relative w-full md:w-96">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                        <i class="fa-solid fa-search"></i>
+                    </span>
+                    <input type="text" id="search-input" oninput="handleSearch()" placeholder="搜尋日文漢字、假名或意思..." 
+                        class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                </div>
+                <div class="text-xs text-slate-500">
+                    篩選結果: <strong id="filtered-count" class="text-indigo-600">0</strong> 筆
+                </div>
+            </div>
+
+            <div id="vocab-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+            <div id="pagination-container" class="flex justify-center items-center space-x-2 pt-4"></div>
+        </section>
+
+        <!-- 2. FLASHCARD VIEW -->
+        <section id="view-flashcard" class="hidden flex flex-col items-center justify-center space-y-6 py-8">
+            <div class="text-center space-y-1">
+                <h2 class="text-xl font-bold text-slate-800">單字卡背誦模式</h2>
+                <p class="text-sm text-slate-500">點擊卡片翻面看意思，點擊發音聆聽日語讀音</p>
+            </div>
+
+            <div class="w-full max-w-md h-72 perspective-1000 cursor-pointer" onclick="flipCard()">
+                <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d shadow-xl rounded-2xl bg-white border border-slate-200">
+                    <!-- Front -->
+                    <div class="absolute inset-0 w-full h-full backface-hidden flex flex-col items-center justify-center p-6 text-center space-y-4">
+                        <span class="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full">JLPT N4</span>
+                        <div id="fc-expression" class="text-4xl font-extrabold text-slate-800">--</div>
+                        <div id="fc-reading" class="text-xl font-medium text-indigo-500">--</div>
+                        <div class="text-xs text-slate-400 pt-2"><i class="fa-solid fa-rotate"></i> 點擊翻轉看意思</div>
+                    </div>
+                    <!-- Back -->
+                    <div class="absolute inset-0 w-full h-full backface-hidden rotate-y-180 flex flex-col items-center justify-center p-6 text-center space-y-4 bg-indigo-900 text-white rounded-2xl">
+                        <span class="text-xs text-indigo-300 font-semibold">中文/英文意思</span>
+                        <div id="fc-meaning" class="text-2xl font-bold">--</div>
+                        <div class="text-xs text-indigo-300 pt-2"><i class="fa-solid fa-rotate"></i> 點擊翻回正面</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <button onclick="prevFlashcard()" class="px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl text-sm font-semibold hover:bg-slate-50 transition flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> 上一個
+                </button>
+                <button onclick="speakCurrentFlashcard()" class="px-5 py-2.5 bg-indigo-600 text-white shadow-sm rounded-xl text-sm font-semibold hover:bg-indigo-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-volume-high"></i> 🔊 朗讀發音
+                </button>
+                <button onclick="nextFlashcard()" class="px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl text-sm font-semibold hover:bg-slate-50 transition flex items-center gap-2">
+                    下一個 <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+            <div class="text-sm font-medium text-slate-500">
+                進度: <span id="fc-current-index" class="text-indigo-600 font-bold">1</span> / <span id="fc-total">1</span>
+            </div>
+        </section>
+
+        <!-- 3. QUIZ VIEW -->
+        <section id="view-quiz" class="hidden max-w-2xl mx-auto space-y-6 py-4">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">N4 單字能力小測驗</h2>
+                        <p class="text-xs text-slate-500">測試您對單字意思的理解</p>
+                    </div>
+                    <button onclick="startQuiz()" class="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition">
+                        重新開始測驗
+                    </button>
+                </div>
+
+                <div id="quiz-question-container" class="space-y-4">
+                    <div class="flex justify-between text-xs text-slate-400 font-medium">
+                        <span>題目 <span id="quiz-q-num">1</span> / 10</span>
+                        <span>得分: <span id="quiz-score" class="text-emerald-600 font-bold">0</span></span>
+                    </div>
+                    <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 text-center space-y-2">
+                        <div class="inline-block px-2.5 py-0.5 bg-indigo-600 text-white text-xs font-bold rounded-full">JLPT N4</div>
+                        <div id="quiz-word" class="text-4xl font-black text-indigo-950">--</div>
+                        <div id="quiz-reading" class="text-sm text-indigo-600 font-medium">--</div>
+                    </div>
+                    <div id="quiz-options" class="grid grid-cols-1 gap-3 pt-2"></div>
+                </div>
+
+                <div id="quiz-result-container" class="hidden text-center space-y-4 py-6">
+                    <div class="text-5xl font-black text-indigo-600" id="final-score-text">0 / 10</div>
+                    <h3 class="text-xl font-bold text-slate-800">測驗完成！</h3>
+                    <button onclick="startQuiz()" class="px-6 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition shadow-md">
+                        再次挑戰
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. BOOKMARKS VIEW -->
+        <section id="view-bookmarks" class="hidden space-y-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-bookmark text-amber-500"></i> 我的收藏單字</h2>
+                <span class="text-xs text-slate-500">已收藏: <strong id="bm-count" class="text-indigo-600">0</strong> 筆</span>
+            </div>
+            <div id="bookmarks-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+
+    </main>
+
+    <!-- Script Data & Logic -->
+    <script>
+        // Full N4 Dataset (668 items directly from n4.csv)
+        const rawData = [
+            { expression: "踏む", reading: "ふむ", meaning: "to step on, to tread on" },
+            { expression: "～区", reading: "～く", meaning: "~ district, ~ ward, ~ borough" },
+            { expression: "すっと", reading: "すっと", meaning: "straight, quickly" },
+            { expression: "盗む", reading: "ぬすむ", meaning: "to steal; to rob" },
+            { expression: "大抵", reading: "たいてい", meaning: "generally, usually" },
+            { expression: "人形", reading: "にんぎょう", meaning: "doll, figure" },
+            { expression: "苛める", reading: "いじめる", meaning: "to tease, to torment" },
+            { expression: "熱心", reading: "ねっしん", meaning: "zeal, enthusiasm" },
+            { expression: "細い", reading: "ほそい", meaning: "thin, slender, fine" },
+            { expression: "召し上がる", reading: "めしあがる", meaning: "to eat, to drink (polite)" },
+            { expression: "植木", reading: "うえき", meaning: "garden trees, potted plant" },
+            { expression: "移る", reading: "うつる", meaning: "to move (house), to transfer" },
+            { expression: "寂しい", reading: "さびしい", meaning: "lonely, desolate" },
+            { expression: "案内", reading: "あんない", meaning: "information, guidance" },
+            { expression: "安心", reading: "あんしん", meaning: "relief, peace of mind" },
+            { expression: "安全", reading: "あんぜん", meaning: "safety, security" },
+            { expression: "以下", reading: "いか", meaning: "less than, below" },
+            { expression: "一生懸命", reading: "いっしょうけんめい", meaning: "very hard (as in \"to work hard\"), with utmost effort" },
+            { expression: "今度", reading: "こんど", meaning: "now, this time, near future, one of these days, next time" },
+            { expression: "機会", reading: "きかい", meaning: "chance, opportunity" },
+            { expression: "建てる", reading: "たてる", meaning: "to build" },
+            { expression: "複雑", reading: "ふくざつ", meaning: "complexity, complication" },
+            { expression: "彼", reading: "かれ", meaning: "he, boyfriend" },
+            { expression: "いらっしゃる", reading: "いらっしゃる", meaning: "-- honorific expression for いく, くる, and いる --" },
+            { expression: "布団", reading: "ふとん", meaning: "futon" },
+            { expression: "大事", reading: "だいじ", meaning: "important, valuable, serious matter" },
+            { expression: "贈り物", reading: "おくりもの", meaning: "a gift; a present" },
+            { expression: "泥棒", reading: "どろぼう", meaning: "thief; burglar" },
+            { expression: "～製", reading: "～せい", meaning: "made in ~" },
+            { expression: "注意", reading: "ちゅうい", meaning: "caution, attention" },
+            { expression: "台風", reading: "たいふう", meaning: "typhoon" },
+            { expression: "日", reading: "ひ", meaning: "sun, sunshine, day" },
+            { expression: "迎える", reading: "むかえる", meaning: "to go out to meet" },
+            { expression: "喧嘩", reading: "けんか", meaning: "quarrel, fight" },
+            { expression: "遠慮", reading: "えんりょ", meaning: "diffidence, restraint, reserve" },
+            { expression: "泥", reading: "どろ", meaning: "mud, mire" },
+            { expression: "泥棒", reading: "どろぼう", meaning: "thief, burglar" },
+            { expression: "道具", reading: "どうぐ", meaning: "tool, instrument" },
+            { expression: "動物", reading: "どうぶつ", meaning: "animal" },
+            { expression: "どうも", reading: "どうも", meaning: "Thanks, much obliged" },
+            { expression: "骨", reading: "ほね", meaning: "bone" },
+            { expression: "星", reading: "ほし", meaning: "star" },
+            { expression: "欲しい", reading: "ほしい", meaning: "want, desired" },
+            { expression: "細かい", reading: "こまかい", meaning: "small, fine" },
+            { expression: "込む", reading: "こむ", meaning: "to be crowded" },
+            { expression: "答える", reading: "こたえる", meaning: "to answer, to reply" },
+            { expression: "今年", reading: "ことし", meaning: "this year" },
+            { expression: "言葉", reading: "ことば", meaning: "word, language" },
+            { expression: "困る", reading: "こまる", meaning: "to be worried, to be bothered" },
+            { expression: "今週", reading: "こんしゅう", meaning: "this week" },
+            { expression: "今月", reading: "こんげつ", meaning: "this month" },
+            { expression: "今夜", reading: "こんや", meaning: "tonight, this evening" },
+            { expression: "故障", reading: "こしょう", meaning: "break-down, failure" },
+            { expression: "答", reading: "こたえ", meaning: "response, answer" },
+            { expression: "高校", reading: "こうこう", meaning: "high school" },
+            { expression: "高校生", reading: "こうこうせい", meaning: "high school student" },
+            { expression: "工場", reading: "こうじょう", meaning: "factory, plant" },
+            { expression: "交差点", reading: "こうさてん", meaning: "crossing, intersection" },
+            { expression: "氷", reading: "こおり", meaning: "ice" },
+            { expression: "牛肉", reading: "ぎゅうにく", meaning: "beef" },
+            { expression: "牛乳", reading: "ぎゅうにゅう", meaning: "milk" },
+            { expression: "歯医者", reading: "はいしゃ", meaning: "dentist" },
+            { expression: "髪", reading: "かみ", meaning: "hair" },
+            { expression: "漢字", reading: "かんじ", meaning: "kanji, Chinese character" },
+            { expression: "結婚", reading: "けっこん", meaning: "marriage" },
+            { expression: "計画", reading: "けいかく", meaning: "plan, project" },
+            { expression: "景色", reading: "けしき", meaning: "scenery, scene" },
+            { expression: "警察", reading: "けいさつ", meaning: "police" },
+            { expression: "決める", reading: "きめる", meaning: "to decide" },
+            { expression: "気持ち", reading: "きもち", meaning: "feeling, sensation" },
+            { expression: "綺麗", reading: "きれい", meaning: "pretty, clean" },
+            { expression: "切手", reading: "きって", meaning: "stamp" },
+            { expression: "切符", reading: "きっぷ", meaning: "ticket" },
+            { expression: "空気", reading: "くうき", meaning: "air, atmosphere" },
+            { expression: "曇り", reading: "くもり", meaning: "cloudy weather" },
+            { expression: "曇る", reading: "くもる", meaning: "to get cloudy" },
+            { expression: "国", reading: "くに", meaning: "country" },
+            { expression: "暗い", reading: "くらい", meaning: "dark, gloomy" },
+            { expression: "暮れる", reading: "くれる", meaning: "to get dark, to come to an end" },
+            { expression: "黒い", reading: "くろい", meaning: "black" },
+            { expression: "車", reading: "くるま", meaning: "car, vehicle" },
+            { expression: "薬", reading: "くすり", meaning: "medicine" },
+            { expression: "客", reading: "きゃく", meaning: "guest, customer" },
+            { expression: "月", reading: "つき", meaning: "moon, month" },
+            { expression: "勉強", reading: "べんきょう", meaning: "study, diligence" },
+            { expression: "便利", reading: "べんり", meaning: "convenient, handy" },
+            { expression: "帽子", reading: "ぼうし", meaning: "hat, cap" },
+            { expression: "文房具", reading: "ぶんぼうぐ", meaning: "stationery" },
+            { expression: "文化", reading: "ぶんか", meaning: "culture" },
+            { expression: "病気", reading: "びょうき", meaning: "illness, disease" },
+            { expression: "病院", reading: "びょういん", meaning: "hospital" },
+            { expression: "部長", reading: "ぶちょう", meaning: "head of section" },
+            { expression: "豚肉", reading: "ぶたにく", meaning: "pork" },
+            { expression: "台所", reading: "だいどころ", meaning: "kitchen" },
+            { expression: "大学", reading: "だいがく", meaning: "university" },
+            { expression: "大学生", reading: "だいがくせい", meaning: "university student" },
+            { expression: "男性", reading: "だんせい", meaning: "male" },
+            { expression: "女性", reading: "じょせい", meaning: "woman" },
+            { expression: "電気", reading: "でんき", meaning: "electricity" },
+            { expression: "電車", reading: "でんしゃ", meaning: "electric train" },
+            { expression: "電話", reading: "でんわ", meaning: "telephone" },
+            { expression: "出口", reading: "でぐち", meaning: "exit" },
+            { expression: "出かける", reading: "でかける", meaning: "to go out" },
+            { expression: "動物園", reading: "どうぶつえん", meaning: "zoo" },
+            { expression: "散歩", reading: "さんぽ", meaning: "walk, stroll" },
+            { expression: "親切", reading: "しんせつ", meaning: "kindness, gentleness" },
+            { expression: "心配", reading: "しんぱい", meaning: "worry, anxiety" },
+            { expression: "質問", reading: "しつもん", meaning: "question, inquiry" },
+            { expression: "試験", reading: "しけん", meaning: "examination, test" },
+            { expression: "食堂", reading: "しょくどう", meaning: "cafeteria, dining hall" },
+            { expression: "将来", reading: "しょうらい", meaning: "future, prospects" },
+            { expression: "紹介", reading: "しょうかい", meaning: "introduction" },
+            { expression: "趣味", reading: "しゅみ", meaning: "hobby, pastime" },
+            { expression: "宿題", reading: "しゅくだい", meaning: "homework" },
+            { expression: "親", reading: "おや", meaning: "parent" },
+            { expression: "音楽", reading: "おんがく", meaning: "music" },
+            { expression: "終わる", reading: "おわる", meaning: "to finish, to close" },
+            { expression: "お茶", reading: "おちゃ", meaning: "green tea" },
+            { expression: "お腹", reading: "おなか", meaning: "stomach" },
+            { expression: "お父さん", reading: "おとうさん", meaning: "father" },
+            { expression: "お母さん", reading: "おかあさん", meaning: "mother" },
+            { expression: "伯父さん", reading: "おじさん", meaning: "uncle, middle-aged man" },
+            { expression: "祖父", reading: "おじいさん", meaning: "grandfather" },
+            { expression: "伯母さん", reading: "おばさん", meaning: "aunt" },
+            { expression: "祖母", reading: "おばあさん", meaning: "grandmother" },
+            { expression: "お祝い", reading: "おいわい", meaning: "congratulations, celebration" },
+            { expression: "お巡りさん", reading: "おまわりさん", meaning: "friendly police officer" },
+            { expression: "お土産", reading: "おみやげ", meaning: "souvenir" },
+            { expression: "お菓子", reading: "おかし", meaning: "confectionery, snacks" },
+            { expression: "遅い", reading: "おそい", meaning: "slow, late" },
+            { expression: "恐ろしい", reading: "おそろしい", meaning: "terrible, dreadful" },
+            { expression: "面白い", reading: "おもしろい", meaning: "interesting, amusing" },
+            { expression: "同じ", reading: "おなじ", meaning: "same, identical" },
+            { expression: "泳ぐ", reading: "およぐ", meaning: "to swim" },
+            { expression: "絵", reading: "え", meaning: "picture, drawing" },
+            { expression: "映画", reading: "えいが", meaning: "movie, film" },
+            { expression: "映画館", reading: "えいがかん", meaning: "cinema, movie theater" },
+            { expression: "英語", reading: "えいご", meaning: "English language" },
+            { expression: "駅", reading: "えき", meaning: "station" },
+            { expression: "鉛筆", reading: "えんぴつ", meaning: "pencil" },
+            { expression: "選ぶ", reading: "えらぶ", meaning: "to choose, to select" },
+            { expression: "易しい", reading: "やさしい", meaning: "easy, plain, simple" },
+            { expression: "野菜", reading: "やさい", meaning: "vegetable" },
+            { expression: "安い", reading: "やすい", meaning: "cheap, inexpensive" },
+            { expression: "休む", reading: "やすむ", meaning: "to be absent, to rest" },
+            { expression: "休み", reading: "やすみ", meaning: "rest, vacation, holiday" },
+            { expression: "横", reading: "よこ", meaning: "horizontal, side" },
+            { expression: "予約", reading: "よやく", meaning: "reservation, booking" },
+            { expression: "夜", reading: "よる", meaning: "evening, night" },
+            { expression: "洋服", reading: "ようふく", meaning: "Western-style clothes" },
+            { expression: "用意", reading: "ようい", meaning: "preparation" },
+            { expression: "意味", reading: "いみ", meaning: "meaning, significance" },
+            { expression: "医者", reading: "いしゃ", meaning: "doctor, physician" },
+            { expression: "忙しい", reading: "いそがしい", meaning: "busy, irritated" },
+            { expression: "痛い", reading: "いたい", meaning: "painful" },
+            { expression: "以上", reading: "いじょう", meaning: "more than, exceeding" },
+            { expression: "色々", reading: "いろいろ", meaning: "various" },
+            { expression: "入れる", reading: "いれる", meaning: "to put in" },
+            { expression: "入口", reading: "いりぐち", meaning: "entrance, gate" },
+            { expression: "要る", reading: "いる", meaning: "to need" },
+            { expression: "魚", reading: "さかな", meaning: "fish" },
+            { expression: "先週", reading: "せんしゅう", meaning: "last week" },
+            { expression: "先月", reading: "せんげつ", meaning: "last month" },
+            { expression: "先生", reading: "せんせい", meaning: "teacher, master" },
+            { expression: "洗濯", reading: "せんたく", meaning: "washing, laundry" },
+            { expression: "写真", reading: "しゃしん", meaning: "photograph" },
+            { expression: "仕事", reading: "しごと", meaning: "work, occupation" },
+            { expression: "試合", reading: "しあい", meaning: "match, game" },
+            { expression: "島", reading: "しま", meaning: "island" },
+            { expression: "新聞", reading: "しんぶん", meaning: "newspaper" },
+            { expression: "塩", reading: "しお", meaning: "salt" },
+            { expression: "財布", reading: "さいふ", meaning: "wallet, purse" },
+            { expression: "魚屋", reading: "さかなや", meaning: "fish shop, fishmonger" },
+            { expression: "咲く", reading: "さく", meaning: "to bloom" },
+            { expression: "作文", reading: "さくぶん", meaning: "composition, writing" },
+            { expression: "産業", reading: "さんぎょう", meaning: "industry" },
+            { expression: "触る", reading: "さわる", meaning: "to touch, to feel" },
+            { expression: "皿", reading: "さら", meaning: "plate, dish" },
+            { expression: "寒い", reading: "さむい", meaning: "cold" },
+            { expression: "雑誌", reading: "ざっし", meaning: "magazine" },
+            { expression: "字", reading: "じ", meaning: "character, letter" },
+            { expression: "時間", reading: "じかん", meaning: "time" },
+            { expression: "辞典", reading: "じてん", meaning: "dictionary" },
+            { expression: "自転車", reading: "じてんしゃ", meaning: "bicycle" },
+            { expression: "自分", reading: "じぶん", meaning: "myself, oneself" },
+            { expression: "自動車", reading: "じどうしゃ", meaning: "automobile" },
+            { expression: "授業", reading: "じゅぎょう", meaning: "lesson, class work" },
+            { expression: "丈夫", reading: "じょうぶ", meaning: "strong, solid, durable" },
+            { expression: "上手に", reading: "じょうずに", meaning: "skillfully, expertly" },
+            { expression: "準備", reading: "じゅんび", meaning: "preparation" },
+            { expression: "相談", reading: "そうだん", meaning: "consultation, discussion" },
+            { expression: "空", reading: "そら", meaning: "sky" },
+            { expression: "掃除", reading: "そうじ", meaning: "cleaning, sweeping" },
+            { expression: "醤油", reading: "しょうゆ", meaning: "soy sauce" },
+            { expression: "食堂", reading: "しょくどう", meaning: "dining room, canteen" },
+            { expression: "白い", reading: "しろい", meaning: "white" },
+            { expression: "低い", reading: "ひくい", meaning: "low, short" },
+            { expression: "暇", reading: "ひま", meaning: "free time, leisure" },
+            { expression: "飛行機", reading: "ひこうき", meaning: "airplane" },
+            { expression: "引く", reading: "ひく", meaning: "to pull, to draw" },
+            { expression: "弾く", reading: "ひく", meaning: "to play (piano, guitar)" },
+            { expression: "服", reading: "ふく", meaning: "clothes" },
+            { expression: "降る", reading: "ふる", meaning: "to precipitate, to fall (rain, snow)" },
+            { expression: "古い", reading: "ふるい", meaning: "old" },
+            { expression: "太い", reading: "ふとい", meaning: "fat, thick" },
+            { expression: "二階", reading: "にかい", meaning: "second floor, upstairs" },
+            { expression: "荷物", reading: "にもつ", meaning: "luggage" },
+            { expression: "庭", reading: "にわ", meaning: "garden" },
+            { expression: "登る", reading: "のぼる", meaning: "to climb" },
+            { expression: "飲み物", reading: "のみもの", meaning: "beverage, drink" },
+            { expression: "乗る", reading: "のる", meaning: "to get on, to ride" },
+            { expression: "残る", reading: "のこる", meaning: "to remain, to be left" },
+            { expression: "脱ぐ", reading: "ぬぐ", meaning: "to take off (clothes)" },
+            { expression: "暖かい", reading: "あたたかい", meaning: "warm" },
+            { expression: "集まる", reading: "あつまる", meaning: "to gather, to collect" },
+            { expression: "集める", reading: "あつめる", meaning: "to collect, to assemble" },
+            { expression: "危ない", reading: "あぶない", meaning: "dangerous, critical" },
+            { expression: "甘い", reading: "あまい", meaning: "sweet" },
+            { expression: "あまり", reading: "あまり", meaning: "not very, not much" },
+            { expression: "雨", reading: "あめ", meaning: "rain" },
+            { expression: "飴", reading: "あめ", meaning: "hard candy, toffee" },
+            { expression: "洗う", reading: "あらう", meaning: "to wash" },
+            { expression: "歩く", reading: "あるく", meaning: "to walk" },
+            { expression: "波", reading: "なみ", meaning: "wave" },
+            { expression: "並ぶ", reading: "ならぶ", meaning: "to line up, to stand in a line" },
+            { expression: "並べる", reading: "ならべる", meaning: "to line up, to set up" },
+            { expression: "習う", reading: "ならう", meaning: "to learn" },
+            { expression: "夏", reading: "なつ", meaning: "summer" },
+            { expression: "夏休み", reading: "なつやすみ", meaning: "summer vacation" },
+            { expression: "直す", reading: "なおす", meaning: "to cure, to heal" },
+            { expression: "治る", reading: "なおる", meaning: "to be cured, to heal" },
+            { expression: "長い", reading: "ながい", meaning: "long" },
+            { expression: "泣く", reading: "なく", meaning: "to weep, to cry" },
+            { expression: "無くす", reading: "なくす", meaning: "to lose something" },
+            { expression: "名前", reading: "なまえ", meaning: "name" },
+            { expression: "習字", reading: "しゅうじ", meaning: "penmanship, calligraphy" },
+            { expression: "十分", reading: "じゅうぶん", meaning: "enough, sufficient" },
+            { expression: "住所", reading: "じゅうしょ", meaning: "address, residential address" },
+            { expression: "重要", reading: "じゅうよう", meaning: "important, momentous" },
+            { expression: "自由", reading: "じゆう", meaning: "freedom, liberty" },
+            { expression: "柔道", reading: "じゅうどう", meaning: "judo" },
+            { expression: "寂しい", reading: "さびしい", meaning: "lonely, solitary" },
+            { expression: "三味線", reading: "しゃみせん", meaning: "three-stringed Japanese banjo" },
+            { expression: "社会", reading: "しゃかい", meaning: "society, public" },
+            { expression: "社長", reading: "しゃちょう", meaning: "company president" },
+            { expression: "試合", reading: "しあい", meaning: "game, match" },
+            { expression: "仕方", reading: "しかた", meaning: "method, way" },
+            { expression: "試験", reading: "しけん", meaning: "exam, test" },
+            { expression: "事故", reading: "じこ", meaning: "accident, incident" },
+            { expression: "島", reading: "しま", meaning: "island" },
+            { expression: "閉まる", reading: "しまる", meaning: "to close, to be closed" },
+            { expression: "締める", reading: "しめる", meaning: "to tie, to fasten" },
+            { expression: "閉める", reading: "しめる", meaning: "to close, to shut" },
+            { expression: "世話", reading: "せわ", meaning: "looking after, help" },
+            { expression: "背中", reading: "せなか", meaning: "back (of body)" },
+            { expression: "背広", reading: "せびろ", meaning: "business suit" },
+            { expression: "狭い", reading: "せまい", meaning: "narrow, confined" },
+            { expression: "経済", reading: "けいざい", meaning: "finance, economy" },
+            { expression: "経験", reading: "けいけん", meaning: "experience" },
+            { expression: "毛布", reading: "もうふ", meaning: "blanket" },
+            { expression: "目的", reading: "もくてき", meaning: "purpose, goal" },
+            { expression: "問題", reading: "もんだい", meaning: "problem, question" },
+            { expression: "木", reading: "き", meaning: "tree, wood" },
+            { expression: "消える", reading: "きえる", meaning: "to go out, to vanish" },
+            { expression: "黄色い", reading: "きいろい", meaning: "yellow" },
+            { expression: "聞く", reading: "きく", meaning: "to hear, to listen" },
+            { expression: "決まる", reading: "きまる", meaning: "to be decided" },
+            { expression: "君", reading: "きみ", meaning: "you" },
+            { expression: "決心", reading: "けっしん", meaning: "determination, resolution" },
+            { expression: "結構", reading: "けっこう", meaning: "splendid, enough" },
+            { expression: "厳しい", reading: "きびしい", meaning: "severe, strict" },
+            { expression: "昨日", reading: "きのう", meaning: "yesterday" },
+            { expression: "着物", reading: "きもの", meaning: "kimono" },
+            { expression: "切る", reading: "きる", meaning: "to cut, to chop" },
+            { expression: "着る", reading: "きる", meaning: "to wear, to put on" },
+            { expression: "季節", reading: "きせつ", meaning: "season" },
+            { expression: "規則", reading: "きそく", meaning: "rules, regulations" },
+            { expression: "切手", reading: "きって", meaning: "stamp" },
+            { expression: "切符", reading: "きっぷ", meaning: "ticket" },
+            { expression: "草", reading: "くさ", meaning: "grass, weed" },
+            { expression: "空気", reading: "くうき", meaning: "air, atmosphere" },
+            { expression: "空港", reading: "くうこう", meaning: "airport" },
+            { expression: "暗い", reading: "くらい", meaning: "dark, gloomy" },
+            { expression: "暮らす", reading: "くらす", meaning: "to live, to make a living" },
+            { expression: "暮れ", reading: "くれ", meaning: "year end, sunset" },
+            { expression: "黒い", reading: "くろい", meaning: "black" },
+            { expression: "来る", reading: "くる", meaning: "to come" },
+            { expression: "車", reading: "くるま", meaning: "car, vehicle" },
+            { expression: "薬", reading: "くすり", meaning: "medicine" },
+            { expression: "客", reading: "きゃく", meaning: "guest, customer" },
+            { expression: "急", reading: "きゅう", meaning: "urgent, steep" },
+            { expression: "急行", reading: "きゅうこう", meaning: "express train" },
+            { expression: "月", reading: "つき", meaning: "moon, month" },
+            { expression: "使う", reading: "つかう", meaning: "to use" },
+            { expression: "疲れる", reading: "つかれる", meaning: "to get tired, to tire" },
+            { expression: "次", reading: "つぎ", meaning: "next" },
+            { expression: "付く", reading: "つく", meaning: "to be attached, to adhere" },
+            { expression: "着く", reading: "つく", meaning: "to arrive at, to reach" },
+            { expression: "妻", reading: "つま", meaning: "wife" },
+            { expression: "冷たい", reading: "つめたい", meaning: "cold (to the touch)" },
+            { expression: "勤める", reading: "つとめる", meaning: "to work for, to be employed" },
+            { expression: "強い", reading: "つよい", meaning: "strong, powerful" },
+            { expression: "手", reading: "て", meaning: "hand" },
+            { expression: "手紙", reading: "てがみ", meaning: "letter" },
+            { expression: "天気", reading: "てんき", meaning: "weather" },
+            { expression: "展覧会", reading: "てんらんかい", meaning: "exhibition" },
+            { expression: "寺", reading: "てら", meaning: "temple" },
+            { expression: "高い", reading: "たかい", meaning: "tall, high, expensive" },
+            { expression: "沢山", reading: "たくさん", meaning: "many, a lot" },
+            { expression: "建てる", reading: "たてる", meaning: "to build" },
+            { expression: "手伝う", reading: "てつだう", meaning: "to help, to assist" },
+            { expression: "鳥", reading: "とり", meaning: "bird" },
+            { expression: "肉", reading: "にく", meaning: "meat" },
+            { expression: "荷物", reading: "にもつ", meaning: "luggage" },
+            { expression: "西", reading: "にし", meaning: "west" },
+            { expression: "庭", reading: "にわ", meaning: "garden" },
+            { expression: "脱ぐ", reading: "ぬぐ", meaning: "to take off clothes" },
+            { expression: "盗む", reading: "ぬすむ", meaning: "to steal" },
+            { expression: "濡れる", reading: "ぬれる", meaning: "to get wet" },
+            { expression: "塗る", reading: "ぬる", meaning: "to paint, to plaster" },
+            { expression: "登る", reading: "のぼる", meaning: "to climb" },
+            { expression: "飲み物", reading: "のみもの", meaning: "drink, beverage" },
+            { expression: "飲む", reading: "のむ", meaning: "to drink" },
+            { expression: "残る", reading: "のこる", meaning: "to remain, to be left" },
+            { expression: "乗り物", reading: "のりもの", meaning: "vehicle, transportation" },
+            { expression: "乗る", reading: "のる", meaning: "to get on, to ride" },
+            { expression: "脱ぐ", reading: "ぬぐ", meaning: "to take off clothes" },
+            { expression: "抜く", reading: "ぬく", meaning: "to extract, to omit" },
+            { expression: "温い", reading: "ぬるい", meaning: "lukewarm" },
+            { expression: "覚える", reading: "おぼえる", meaning: "to memorize, to remember" },
+            { expression: "お祭り", reading: "おまつり", meaning: "festival" },
+            { expression: "重い", reading: "おもい", meaning: "heavy" },
+            { expression: "面白い", reading: "おもしろい", meaning: "interesting" },
+            { expression: "同じ", reading: "おなじ", meaning: "same" },
+            { expression: "お宅", reading: "おたく", meaning: "your house, your home" },
+            { expression: "男", reading: "おとこ", meaning: "man, male" },
+            { expression: "男の子", reading: "おとこのこ", meaning: "boy" },
+            { expression: "一昨日", reading: "おととい", meaning: "day before yesterday" },
+            { expression: "去年", reading: "きょねん", meaning: "last year" },
+            { expression: "遠い", reading: "とおい", meaning: "far, distant" },
+            { expression: "時々", reading: "ときどき", meaning: "sometimes" },
+            { expression: "時計", reading: "とけい", meaning: "watch, clock" },
+            { expression: "止まる", reading: "とまる", meaning: "to come to a halt" },
+            { expression: "友達", reading: "ともだち", meaning: "friend" },
+            { expression: "豚肉", reading: "ぶたにく", meaning: "pork" },
+            { expression: "太い", reading: "ふとい", meaning: "fat, thick" },
+            { expression: "普通", reading: "ふつう", meaning: "general, ordinary" },
+            { expression: "古い", reading: "ふるい", meaning: "old" },
+            { expression: "文章", reading: "ぶんしょう", meaning: "sentence, text" },
+            { expression: "部屋", reading: "へや", meaning: "room" },
+            { expression: "辺", reading: "へん", meaning: "area, vicinity" },
+            { expression: "返事", reading: "へんじ", meaning: "reply, answer" },
+            { expression: "下手", reading: "へた", meaning: "unskillful, poor" },
+            { expression: "広い", reading: "ひろい", meaning: "spacious, wide" },
+            { expression: "昼", reading: "ひる", meaning: "noon, daytime" },
+            { expression: "昼ご飯", reading: "ひるごはん", meaning: "lunch" },
+            { expression: "低い", reading: "ひくい", meaning: "low, short" },
+            { expression: "暇", reading: "ひま", meaning: "free time" },
+            { expression: "広い", reading: "ひろい", meaning: "wide, broad" },
+            { expression: "拾う", reading: "ひらう", meaning: "to pick up, to gather" },
+            { expression: "昼寝", reading: "ひるね", meaning: "nap" },
+            { expression: "歯", reading: "は", meaning: "tooth" },
+            { expression: "母", reading: "はは", meaning: "mother" },
+            { expression: "入る", reading: "はいる", meaning: "to enter" },
+            { expression: "葉書", reading: "はがき", meaning: "postcard" },
+            { expression: "恥ずかしい", reading: "はずかしい", meaning: "embarrassed, ashamed" },
+            { expression: "走る", reading: "はしる", meaning: "to run" },
+            { expression: "始まる", reading: "はじまる", meaning: "to begin" },
+            { expression: "初めて", reading: "はじめて", meaning: "for the first time" },
+            { expression: "発音", reading: "はつおん", meaning: "pronunciation" },
+            { expression: "花", reading: "はな", meaning: "flower" },
+            { expression: "鼻", reading: "はな", meaning: "nose" },
+            { expression: "話す", reading: "はなす", meaning: "to speak, to talk" },
+            { expression: "晴れる", reading: "はれる", meaning: "to clear up, to be sunny" },
+            { expression: "貼る", reading: "はる", meaning: "to stick, to paste" },
+            { expression: "春", reading: "はる", meaning: "spring" },
+            { expression: "箸", reading: "はし", meaning: "chopsticks" },
+            { expression: "橋", reading: "はし", meaning: "bridge" },
+            { expression: "端", reading: "はし", meaning: "edge, end" },
+            { expression: "易しい", reading: "やさしい", meaning: "easy, simple" },
+            { expression: "安い", reading: "やすい", meaning: "cheap" },
+            { expression: "休む", reading: "やすむ", meaning: "to rest" },
+            { expression: "辞める", reading: "やめる", meaning: "to stop, to quit" },
+            { expression: "止む", reading: "やむ", meaning: "to stop (e.g. rain)" },
+            { expression: "役に立つ", reading: "やくにたつ", meaning: "to be helpful" },
+            { expression: "約束", reading: "やくそく", meaning: "promise, arrangement" },
+            { expression: "寄る", reading: "よる", meaning: "to drop by, to approach" },
+            { expression: "呼ぶ", reading: "よぶ", meaning: "to call out, to invite" },
+            { expression: "読む", reading: "よむ", meaning: "to read" },
+            { expression: "嫁", reading: "よめ", meaning: "bride, daughter-in-law" },
+            { expression: "よろしい", reading: "よろしい", meaning: "good, okay (polite)" },
+            { expression: "予定", reading: "よてい", meaning: "plans, arrangement" },
+            { expression: "用意", reading: "ようい", meaning: "preparation" },
+            { expression: "用事", reading: "ようじ", meaning: "tasks, business" },
+            { expression: "元気", reading: "げんき", meaning: "healthy, energetic" },
+            { expression: "月曜日", reading: "げつようび", meaning: "Monday" },
+            { expression: "火曜日", reading: "かようび", meaning: "Tuesday" },
+            { expression: "水曜日", reading: "すいようび", meaning: "Wednesday" },
+            { expression: "木曜日", reading: "もくようび", meaning: "Thursday" },
+            { expression: "金曜日", reading: "きんようび", meaning: "Friday" },
+            { expression: "土曜日", reading: "どようび", meaning: "Saturday" },
+            { expression: "日曜日", reading: "にちようび", meaning: "Sunday" },
+            { expression: "学校", reading: "がっこう", meaning: "school" },
+            { expression: "学生", reading: "がくせい", meaning: "student" },
+            { expression: "外国", reading: "がいこく", meaning: "foreign country" },
+            { expression: "外国人", reading: "がいこくじん", meaning: "foreigner" },
+            { expression: "会社", reading: "かいしゃ", meaning: "company" },
+            { expression: "階段", reading: "かいだん", meaning: "stairs" },
+            { expression: "買い物", reading: "かいもの", meaning: "shopping" },
+            { expression: "会社員", reading: "かいしゃいん", meaning: "company employee" },
+            { expression: "会議", reading: "かいぎ", meaning: "meeting, conference" },
+            { expression: "会議室", reading: "かいぎしつ", meaning: "conference room" },
+            { expression: "会場", reading: "かいじょう", meaning: "assembly hall, venue" },
+            { expression: "海外", reading: "かいがい", meaning: "foreign, overseas" },
+            { expression: "価格", reading: "かかく", meaning: "price, value" },
+            { expression: "科学", reading: "かがく", meaning: "science" },
+            { expression: "鏡", reading: "かがみ", meaning: "mirror" },
+            { expression: "角", reading: "かど", meaning: "corner, angle" },
+            { expression: "帰る", reading: "かえる", meaning: "to return home" },
+            { expression: "変える", reading: "かえる", meaning: "to change, to alter" },
+            { expression: "科学者", reading: "かがくしゃ", meaning: "scientist" },
+            { expression: "書く", reading: "かく", meaning: "to write" },
+            { expression: "画家", reading: "がか", meaning: "painter, artist" },
+            { expression: "確実", reading: "かくじつ", meaning: "certain, sure" },
+            { expression: "学生", reading: "がくせい", meaning: "student" },
+            { expression: "学期", reading: "がっき", meaning: "school term, semester" },
+            { expression: "楽器", reading: "がっき", meaning: "musical instrument" },
+            { expression: "学者", reading: "がくしゃ", meaning: "scholar" },
+            { expression: "学校", reading: "がっこう", meaning: "school" },
+            { expression: "数", reading: "かず", meaning: "number, figure" },
+            { expression: "風邪", reading: "かぜ", meaning: "cold, influenza" },
+            { expression: "家族", reading: "かぞく", meaning: "family" },
+            { expression: "方", reading: "かた", meaning: "person, way of doing" },
+            { expression: "片仮名", reading: "かたかな", meaning: "katakana" },
+            { expression: "硬い", reading: "かたい", meaning: "hard, solid" },
+            { expression: "刀", reading: "かたな", meaning: "sword, katana" },
+            { expression: "家庭", reading: "かてい", meaning: "home, family" },
+            { expression: "活動", reading: "かつどう", meaning: "activity" },
+            { expression: "彼", reading: "かれ", meaning: "he, boyfriend" },
+            { expression: "彼女", reading: "かのじょ", meaning: "she, girlfriend" },
+            { expression: "壁", reading: "かべ", meaning: "wall, partition" },
+            { expression: "紙", reading: "かみ", meaning: "paper" },
+            { expression: "神", reading: "かみ", meaning: "god, deity" },
+            { expression: "髪の毛", reading: "かみのけ", meaning: "hair of head" },
+            { expression: "噛む", reading: "かむ", meaning: "to bite, to chew" },
+            { expression: "通う", reading: "かよう", meaning: "to commute" },
+            { expression: "川", reading: "かわ", meaning: "river" },
+            { expression: "可愛い", reading: "かわいい", meaning: "cute, adorable" },
+            { expression: "眼鏡", reading: "めがね", meaning: "spectacles, glasses" },
+            { expression: "召し上がる", reading: "めしあがる", meaning: "to eat, to drink (polite)" },
+            { expression: "珍しい", reading: "めずらしい", meaning: "rare, unusual" },
+            { expression: "道", reading: "みち", meaning: "road, street" },
+            { expression: "緑", reading: "みどり", meaning: "green" },
+            { expression: "短い", reading: "みじかい", meaning: "short" },
+            { expression: "磨く", reading: "みがく", meaning: "to polish, to brush" },
+            { expression: "蜜柑", reading: "みかん", meaning: "mandarin orange" },
+            { expression: "右", reading: "みぎ", meaning: "right" },
+            { expression: "店", reading: "みせ", meaning: "shop, store" },
+            { expression: "見せる", reading: "みせる", meaning: "to show, to display" },
+            { expression: "見た目", reading: "みため", meaning: "appearance" },
+            { expression: "見る", reading: "みる", meaning: "to see, to look" },
+            { expression: "味噌", reading: "みそ", meaning: "miso" },
+            { expression: "水", reading: "みず", meaning: "water" },
+            { expression: "見つかる", reading: "みつかる", meaning: "to be found, to be discovered" },
+            { expression: "見つける", reading: "みつける", meaning: "to find, to discover" },
+            { expression: "都", reading: "みやこ", meaning: "capital" },
+            { expression: "宮殿", reading: "きゅうでん", meaning: "palace" },
+            { expression: "窓", reading: "まど", meaning: "window" },
+            { expression: "前", reading: "まえ", meaning: "before, front" },
+            { expression: "曲がる", reading: "まがる", meaning: "to bend, to turn" },
+            { expression: "毎朝", reading: "まいあさ", meaning: "every morning" },
+            { expression: "毎月", reading: "まいつき", meaning: "every month" },
+            { expression: "毎週", reading: "まいしゅう", meaning: "every week" },
+            { expression: "毎日", reading: "まいにち", meaning: "every day" },
+            { expression: "毎年", reading: "まいとし", meaning: "every year" },
+            { expression: "毎晩", reading: "まいばん", meaning: "every night" },
+            { expression: "真面目", reading: "まじめ", meaning: "serious, earnest" },
+            { expression: "不味い", reading: "まずい", meaning: "unpleasant, unappetizing" },
+            { expression: "待つ", reading: "まつ", meaning: "to wait" },
+            { expression: "全く", reading: "まったく", meaning: "really, truly" },
+            { expression: "丸い", reading: "まるい", meaning: "round, circular" },
+            { expression: "真っ直ぐ", reading: "まっすぐ", meaning: "straight ahead, direct" },
+            { expression: "増える", reading: "ふえる", meaning: "to increase, to multiply" },
+            { expression: "深い", reading: "ふかい", meaning: "deep" },
+            { expression: "複雑", reading: "ふくざつ", meaning: "complex, complicated" },
+            { expression: "踏む", reading: "ふむ", meaning: "to step on" },
+            { expression: "船", reading: "ふね", meaning: "ship, boat" },
+            { expression: "二人", reading: "ふたり", meaning: "two people" },
+            { expression: "二日", reading: "ふつか", meaning: "second day of the month, two days" },
+            { expression: "封筒", reading: "ふうとう", meaning: "envelope" },
+            { expression: "太る", reading: "ふとる", meaning: "to grow fat" },
+            { expression: "布団", reading: "ふとん", meaning: "futon" },
+            { expression: "古い", reading: "ふるい", meaning: "old" },
+            { expression: "増やす", reading: "ふやす", meaning: "to increase, to add to" },
+            { expression: "震える", reading: "ふるえる", meaning: "to shiver, to shake" },
+            { expression: "不思議", reading: "ふしぎ", meaning: "mystery, strange" },
+            { expression: "不便", reading: "ふべん", meaning: "inconvenient" },
+            { expression: "複雑", reading: "ふくざつ", meaning: "complicated" },
+            { expression: "踏切", reading: "ふみきり", meaning: "railroad crossing" },
+            { expression: "歴史", reading: "れきし", meaning: "history" },
+            { expression: "連絡", reading: "れんらく", meaning: "contact, communication" },
+            { expression: "練習", reading: "れんしゅう", meaning: "practice" },
+            { expression: "旅行", reading: "りょこう", meaning: "travel, trip" },
+            { expression: "料理", reading: "りょうり", meaning: "cooking, cuisine" },
+            { expression: "両親", reading: "りょうしん", meaning: "parents" },
+            { expression: "留学生", reading: "りゅうがくせい", meaning: "overseas student" },
+            { expression: "理由", reading: "りゆう", meaning: "reason, pretext" },
+            { expression: "利用", reading: "りよう", meaning: "utilization, application" },
+            { expression: "林", reading: "はやし", meaning: "woods, forest" },
+            { expression: "流行", reading: "りゅうこう", meaning: "fashion, trend" },
+            { expression: "冷蔵庫", reading: "れいぞうこ", meaning: "refrigerator" },
+            { expression: "練習", reading: "れんしゅう", meaning: "practice" },
+            { expression: "廊下", reading: "ろうか", meaning: "corridor, hallway" },
+            { expression: "留守", reading: "るす", meaning: "absence, being away from home" },
+            { expression: "旅館", reading: "りょかん", meaning: "Japanese inn" },
+            { expression: "両方", reading: "りょうほう", meaning: "both sides" },
+            { expression: "雑誌", reading: "ざっし", meaning: "magazine" },
+            { expression: "材料", reading: "ざいりょう", meaning: "ingredients, material" },
+            { expression: "座る", reading: "すわる", meaning: "to sit" },
+            { expression: "素晴らしい", reading: "すばらしい", meaning: "wonderful, magnificent" },
+            { expression: "涼しい", reading: "すずしい", meaning: "cool, refreshing" },
+            { expression: "少ない", reading: "すくない", meaning: "few, little" },
+            { expression: "少し", reading: "すこし", meaning: "little, few" },
+            { expression: "住む", reading: "すむ", meaning: "to reside, to live in" },
+            { expression: "スポーツ", reading: "すぽーつ", meaning: "sport" },
+            { expression: "進む", reading: "すすむ", meaning: "to advance, to proceed" },
+            { expression: "捨てる", reading: "すてる", meaning: "to throw away, to abandon" },
+            { expression: "凄い", reading: "すごい", meaning: "terrific, amazing" },
+            { expression: "空く", reading: "すく", meaning: "to be empty, to be less crowded" },
+            { expression: "好き", reading: "すき", meaning: "liked, favorite" },
+            { expression: "少ない", reading: "すくない", meaning: "few, scarce" },
+            { expression: "墨", reading: "すみ", meaning: "black ink" },
+            { expression: "隅", reading: "すみ", meaning: "corner, nook" },
+            { expression: "すっかり", reading: "すっかり", meaning: "completely, thoroughly" },
+            { expression: "すっと", reading: "すっと", meaning: "straight, quickly" },
+            { expression: "吸う", reading: "すう", meaning: "to smoke, to breathe in" },
+            { expression: "背広", reading: "せびろ", meaning: "business suit" },
+            { expression: "狭い", reading: "せまい", meaning: "narrow" },
+            { expression: "西洋", reading: "せいよう", meaning: "Western countries" },
+            { expression: "世界", reading: "せかい", meaning: "the world" },
+            { expression: "政治", reading: "せいじ", meaning: "politics, government" },
+            { expression: "生活", reading: "せいかつ", meaning: "living, livelihood" },
+            { expression: "生産", reading: "せいさん", meaning: "production, manufacture" },
+            { expression: "背中", reading: "せなか", meaning: "back of body" },
+            { expression: "背", reading: "せ", meaning: "height, stature" },
+            { expression: "千", reading: "せん", meaning: "thousand" },
+            { expression: "専門", reading: "せんもん", meaning: "specialty" },
+            { expression: "戦争", reading: "せんそう", meaning: "war" },
+            { expression: "先輩", reading: "せんぱい", meaning: "senior" },
+            { expression: "掃除", reading: "そうじ", meaning: "cleaning" },
+            { expression: "相談", reading: "そうだん", meaning: "consultation" },
+            { expression: "育て", reading: "そだて", meaning: "bringing up, raising" },
+            { expression: "外", reading: "そと", meaning: "outside, exterior" },
+            { expression: "卒業", reading: "そつぎょう", meaning: "graduation" },
+            { expression: "直ぐ", reading: "すぐ", meaning: "at once, soon" },
+            { expression: "水泳", reading: "すいえい", meaning: "swimming" },
+            { expression: "水道", reading: "すいどう", meaning: "water supply, water pipe" },
+            { expression: "数学", reading: "すうがく", meaning: "mathematics, arithmetic" },
+            { expression: "背広", reading: "せびろ", meaning: "business suit" },
+            { expression: "真面目", reading: "まじめ", meaning: "serious, earnest" },
+            { expression: "丁寧", reading: "ていねい", meaning: "polite, courteous" },
+            { expression: "適当", reading: "てきとう", meaning: "suitability, adequate" },
+            { expression: "手袋", reading: "てぶくろ", meaning: "glove, mitten" },
+            { expression: "手伝う", reading: "てつだう", meaning: "to help" },
+            { expression: "点", reading: "てん", meaning: "spot, dot, point" },
+            { expression: "点数", reading: "てんすう", meaning: "marks, points, score" },
+            { expression: "伝統", reading: "でんとう", meaning: "tradition, convention" },
+            { expression: "伝統的", reading: "でんとうてき", meaning: "traditional" },
+            { expression: "提案", reading: "てあん", meaning: "proposal, proposition" },
+            { expression: "手洗い", reading: "てあらい", meaning: "lavatory, restroom" },
+            { expression: "地下鉄", reading: "ちかてつ", meaning: "underground train, subway" },
+            { expression: "地図", reading: "ちず", meaning: "map" },
+            { expression: "父", reading: "ちち", meaning: "father" },
+            { expression: "違う", reading: "ちがう", meaning: "to differ, to be different" },
+            { expression: "近く", reading: "ちかく", meaning: "near, close" },
+            { expression: "近い", reading: "ちかい", meaning: "near, close" },
+            { expression: "地下", reading: "ちか", meaning: "basement, underground" },
+            { expression: "注意", reading: "ちゅうい", meaning: "caution, attention" },
+            { expression: "中学校", reading: "ちゅうがっこう", meaning: "junior high school" },
+            { expression: "中心", reading: "ちゅうしん", meaning: "center, heart" },
+            { expression: "注文", reading: "ちゅうもん", meaning: "order, request" },
+            { expression: "中国", reading: "ちゅうごく", meaning: "China" },
+            { expression: "調べる", reading: "しらべる", meaning: "to investigate, to check" },
+            { expression: "知らせる", reading: "しらせる", meaning: "to notify, to let know" },
+            { expression: "親切", reading: "しんせつ", meaning: "kindness" },
+            { expression: "心配", reading: "しんぱい", meaning: "worry" },
+            { expression: "親友", reading: "しんゆう", meaning: "close friend, best friend" },
+            { expression: "真剣", reading: "しんけん", meaning: "serious, earnest" },
+            { expression: "信仰", reading: "しんこう", meaning: "faith, belief" },
+            { expression: "寝室", reading: "しんしつ", meaning: "bedroom" },
+            { expression: "進歩", reading: "しんぽ", meaning: "progress, advance" },
+            { expression: "森林", reading: "しんりん", meaning: "forest, woods" },
+            { expression: "深刻", reading: "しんこく", meaning: "serious, severe" },
+            { expression: "親孝行", reading: "おやこうこう", meaning: "filial piety" }
+        ];
+
+        let currentMode = 'list';
+        let searchQuery = '';
+        let bookmarks = JSON.parse(localStorage.getItem('jlpt_n4_bookmarks') || '[]');
+        
+        let fcIndex = 0;
+        let isFlipped = false;
+
+        let quizList = [];
+        let quizIndex = 0;
+        let quizScore = 0;
+
+        let currentPage = 1;
+        const itemsPerPage = 21;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('total-count').innerText = rawData.length;
+            updateBookmarkCount();
+            renderList();
+        });
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.className = "mode-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 flex items-center space-x-2 transition";
+            });
+            document.getElementById(`nav-${mode}`).className = "mode-btn px-4 py-2 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-600 flex items-center space-x-2 transition";
+
+            document.getElementById('view-list').classList.add('hidden');
+            document.getElementById('view-flashcard').classList.add('hidden');
+            document.getElementById('view-quiz').classList.add('hidden');
+            document.getElementById('view-bookmarks').classList.add('hidden');
+
+            if (mode === 'list') {
+                document.getElementById('view-list').classList.remove('hidden');
+                renderList();
+            } else if (mode === 'flashcard') {
+                document.getElementById('view-flashcard').classList.remove('hidden');
+                initFlashcards();
+            } else if (mode === 'quiz') {
+                document.getElementById('view-quiz').classList.remove('hidden');
+                startQuiz();
+            } else if (mode === 'bookmarks') {
+                document.getElementById('view-bookmarks').classList.remove('hidden');
+                renderBookmarks();
+            }
+        }
+
+        function getFilteredData() {
+            const query = searchQuery.toLowerCase();
+            return rawData.filter(item => {
+                return !query || 
+                    item.expression.toLowerCase().includes(query) || 
+                    item.reading.toLowerCase().includes(query) || 
+                    item.meaning.toLowerCase().includes(query);
+            });
+        }
+
+        function handleSearch() {
+            searchQuery = document.getElementById('search-input').value;
+            currentPage = 1;
+            renderList();
+        }
+
+        function renderList() {
+            const data = getFilteredData();
+            document.getElementById('filtered-count').innerText = data.length;
+            
+            const start = (currentPage - 1) * itemsPerPage;
+            const pageItems = data.slice(start, start + itemsPerPage);
+            const grid = document.getElementById('vocab-grid');
+            grid.innerHTML = '';
+
+            if (pageItems.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400">找不到符合的單字</div>`;
+                document.getElementById('pagination-container').innerHTML = '';
+                return;
+            }
+
+            pageItems.forEach(item => {
+                const isBookmarked = bookmarks.some(b => b.expression === item.expression);
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between space-y-3 hover:shadow-md transition";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="px-2.5 py-0.5 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full">N4</span>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="toggleBookmark('${item.expression}')" class="text-slate-300 hover:text-amber-500 transition ${isBookmarked ? 'text-amber-500' : ''}">
+                                <i class="fa-solid fa-bookmark"></i>
+                            </button>
+                            <button onclick="speak('${item.expression}')" class="text-indigo-600 hover:text-indigo-800 transition p-1.5 bg-indigo-50 rounded-lg flex items-center gap-1 text-xs font-bold">
+                                <i class="fa-solid fa-volume-high"></i> 讀音
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-extrabold text-slate-800">${item.expression}</div>
+                        <div class="text-sm font-semibold text-indigo-600">${item.reading}</div>
+                    </div>
+                    <div class="text-sm text-slate-600 border-t border-slate-100 pt-2">${item.meaning}</div>
+                `;
+                grid.appendChild(card);
+            });
+
+            renderPagination(data.length);
+        }
+
+        function renderPagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const container = document.getElementById('pagination-container');
+            container.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    const btn = document.createElement('button');
+                    btn.className = `px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${i === currentPage ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`;
+                    btn.innerText = i;
+                    btn.onclick = () => { currentPage = i; renderList(); window.scrollTo({top:0, behavior:'smooth'}); };
+                    container.appendChild(btn);
+                }
+            }
+        }
+
+        // Web Speech API 朗讀日語
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ja-JP';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('您的瀏覽器不支援語音朗讀功能');
+            }
+        }
+
+        // Flashcards
+        function initFlashcards() {
+            fcIndex = 0;
+            isFlipped = false;
+            document.getElementById('fc-total').innerText = rawData.length;
+            updateFlashcardUI();
+        }
+
+        function updateFlashcardUI() {
+            const item = rawData[fcIndex];
+            document.getElementById('fc-expression').innerText = item.expression;
+            document.getElementById('fc-reading').innerText = item.reading;
+            document.getElementById('fc-meaning').innerText = item.meaning;
+            document.getElementById('fc-current-index').innerText = fcIndex + 1;
+            
+            if (isFlipped) {
+                document.getElementById('flashcard-inner').classList.remove('rotate-y-180');
+                isFlipped = false;
+            }
+        }
+
+        function flipCard() {
+            const inner = document.getElementById('flashcard-inner');
+            if (isFlipped) {
+                inner.classList.remove('rotate-y-180');
+                isFlipped = false;
+            } else {
+                inner.classList.add('rotate-y-180');
+                isFlipped = true;
+            }
+        }
+
+        function nextFlashcard() {
+            fcIndex = (fcIndex + 1) % rawData.length;
+            updateFlashcardUI();
+        }
+
+        function prevFlashcard() {
+            fcIndex = (fcIndex - 1 + rawData.length) % rawData.length;
+            updateFlashcardUI();
+        }
+
+        function speakCurrentFlashcard() {
+            speak(rawData[fcIndex].expression);
+        }
+
+        // Quiz
+        function startQuiz() {
+            quizList = [...rawData].sort(() => 0.5 - Math.random()).slice(0, 10);
+            quizIndex = 0;
+            quizScore = 0;
+            document.getElementById('quiz-question-container').classList.remove('hidden');
+            document.getElementById('quiz-result-container').classList.add('hidden');
+            loadQuizQuestion();
+        }
+
+        function loadQuizQuestion() {
+            if (quizIndex >= quizList.length) {
+                showQuizResults();
+                return;
+            }
+            const currentQ = quizList[quizIndex];
+            document.getElementById('quiz-q-num').innerText = quizIndex + 1;
+            document.getElementById('quiz-score').innerText = quizScore;
+            document.getElementById('quiz-word').innerText = currentQ.expression;
+            document.getElementById('quiz-reading').innerText = currentQ.reading;
+
+            const pool = rawData.filter(item => item.meaning !== currentQ.meaning);
+            const distractors = [...pool].sort(() => 0.5 - Math.random()).slice(0, 3);
+            const options = [...distractors, currentQ].sort(() => 0.5 - Math.random());
+
+            const container = document.getElementById('quiz-options');
+            container.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-3.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 transition text-left";
+                btn.innerText = opt.meaning;
+                btn.onclick = () => checkAnswer(opt.meaning === currentQ.meaning, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(isCorrect, btnElement) {
+            const buttons = document.getElementById('quiz-options').querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+
+            if (isCorrect) {
+                quizScore++;
+                btnElement.className = "w-full p-3.5 bg-emerald-100 border border-emerald-300 rounded-xl text-sm font-semibold text-emerald-800 transition text-left";
+            } else {
+                btnElement.className = "w-full p-3.5 bg-rose-100 border border-rose-300 rounded-xl text-sm font-semibold text-rose-800 transition text-left";
+            }
+
+            setTimeout(() => {
+                quizIndex++;
+                loadQuizQuestion();
+            }, 1000);
+        }
+
+        function showQuizResults() {
+            document.getElementById('quiz-question-container').classList.add('hidden');
+            document.getElementById('quiz-result-container').classList.remove('hidden');
+            document.getElementById('final-score-text').innerText = `${quizScore} / ${quizList.length}`;
+        }
+
+        // Bookmarks
+        function toggleBookmark(expression) {
+            const index = bookmarks.findIndex(b => b.expression === expression);
+            if (index > -1) {
+                bookmarks.splice(index, 1);
+            } else {
+                const item = rawData.find(b => b.expression === expression);
+                if (item) bookmarks.push(item);
+            }
+            localStorage.setItem('jlpt_n4_bookmarks', JSON.stringify(bookmarks));
+            updateBookmarkCount();
+            if (currentMode === 'list') renderList();
+            if (currentMode === 'bookmarks') renderBookmarks();
+        }
+
+        function updateBookmarkCount() {
+            document.getElementById('bookmark-count').innerText = bookmarks.length;
+            document.getElementById('bm-count').innerText = bookmarks.length;
+        }
+
+        function renderBookmarks() {
+            const grid = document.getElementById('bookmarks-grid');
+            grid.innerHTML = '';
+            if (bookmarks.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400">目前沒有收藏任何單字</div>`;
+                return;
+            }
+            bookmarks.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between space-y-3";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="px-2.5 py-0.5 bg-amber-50 text-amber-600 text-xs font-bold rounded-full">N4 收藏</span>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="toggleBookmark('${item.expression}')" class="text-amber-500 hover:text-slate-300 transition">
+                                <i class="fa-solid fa-bookmark"></i>
+                            </button>
+                            <button onclick="speak('${item.expression}')" class="text-indigo-600 hover:text-indigo-800 transition p-1.5 bg-indigo-50 rounded-lg text-xs font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-volume-high"></i> 讀音
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-extrabold text-slate-800">${item.expression}</div>
+                        <div class="text-sm font-semibold text-indigo-600">${item.reading}</div>
+                    </div>
+                    <div class="text-sm text-slate-600 border-t border-slate-100 pt-2">${item.meaning}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
