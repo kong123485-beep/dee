@@ -2,79 +2,97 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>詩篇第一篇與第二十三篇（中英日三語朗讀版）</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>詩篇第一篇與第二十三篇（手機放大朗讀版）</title>
     <style>
+        /* 響應式基礎設定 */
         body {
             font-family: "Helvetica Neue", Arial, sans-serif;
             line-height: 1.8;
-            margin: 20px;
+            margin: 10px;
             background-color: #f9f9f9;
             color: #333;
+            font-size: 16px; /* 預設基準字體大小 */
+            transition: font-size 0.2s;
         }
         h1 {
             text-align: center;
             color: #2c3e50;
+            font-size: 1.5rem;
         }
-        .global-control {
-            text-align: center;
-            margin-bottom: 30px;
+        p {
+            font-size: 0.95rem;
         }
-        .global-control button {
-            background-color: #e74c3c;
-            color: white;
+
+        /* 手機字體調整與控制列 */
+        .control-panel {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+        .control-panel button {
+            padding: 8px 12px;
             border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1em;
-            transition: background 0.2s;
+            font-size: 0.95rem;
+            color: white;
+            font-weight: bold;
         }
-        .global-control button:hover {
-            background-color: #c0392b;
-        }
+        .btn-stop { background-color: #e74c3c; }
+        .btn-stop:hover { background-color: #c0392b; }
+        .btn-font { background-color: #7f8c8d; }
+        .btn-font:hover { background-color: #626567; }
 
         /* 詩篇第 1 篇：深藍色主題 */
         .chapter-1 .chapter-title {
             text-align: center;
             color: #2980b9;
-            margin-top: 40px;
+            margin-top: 30px;
             border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
+            font-size: 1.3rem;
         }
         .chapter-1 .verse-box {
             background: #fff;
             border-left: 5px solid #3498db;
-            margin: 20px 0;
-            padding: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 15px 0;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 4px;
         }
         .chapter-1 .audio-btns button {
             background-color: #3498db;
-        }
-        .chapter-1 .audio-btns button:hover {
-            background-color: #2980b9;
         }
 
         /* 詩篇第 23 篇：青綠色牧者主題 */
         .chapter-23 .chapter-title {
             text-align: center;
             color: #27ae60;
-            margin-top: 40px;
+            margin-top: 30px;
             border-bottom: 2px solid #2ecc71;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
+            font-size: 1.3rem;
         }
         .chapter-23 .verse-box {
             background: #fff;
             border-left: 5px solid #2ecc71;
-            margin: 20px 0;
-            padding: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 15px 0;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 4px;
         }
         .chapter-23 .audio-btns button {
             background-color: #27ae60;
-        }
-        .chapter-23 .audio-btns button:hover {
-            background-color: #219653;
         }
 
         .reference-bar {
@@ -82,31 +100,32 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 5px;
         }
         .reference {
             font-weight: bold;
             color: #555;
-            font-size: 1.1em;
+            font-size: 1rem;
         }
         .audio-btns button {
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 6px 10px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.9em;
-            margin-left: 5px;
+            font-size: 0.85rem;
             transition: background 0.2s;
         }
         .lang-row {
-            margin: 8px 0;
+            margin: 10px 0;
         }
         .label {
             font-size: 0.85em;
             color: #7f8c8d;
             font-weight: bold;
             display: inline-block;
-            width: 60px;
+            width: 55px;
         }
         .chinese {
             font-size: 1.05em;
@@ -127,11 +146,14 @@
 <body>
 
     <h1>聖經《詩篇》精選經文</h1>
-    <p style="text-align: center; color: #666;">（中、英、日三語對照、假名讀音與語音朗讀）</p>
+    <p style="text-align: center; color: #666; margin-bottom: 15px;">（中、英、日三語對照、假名讀音與語音朗讀）</p>
 
-    <!-- 全局停止按鈕 -->
-    <div class="global-control">
-        <button onclick="stopSpeaking()">⏹ 停止所有朗讀</button>
+    <!-- 手機專用頂部控制列（包含字體放大縮小與停止按鈕） -->
+    <div class="control-panel">
+        <button class="btn-font" onclick="changeFontSize(2)">➕ 放大字體</button>
+        <button class="btn-font" onclick="changeFontSize(-2)">➖ 縮小字體</button>
+        <button class="btn-font" onclick="resetFontSize()">🔄 預設大小</button>
+        <button class="btn-stop" onclick="stopSpeaking()">⏹ 停止朗讀</button>
     </div>
 
     <!-- ================= 詩篇第 1 篇 ================= -->
@@ -313,15 +335,28 @@
         </div>
     </div>
 
-    <!-- JavaScript 語音朗讀邏輯 -->
+    <!-- JavaScript 邏輯：支援手機字體動態調整與語音朗讀 -->
     <script>
+        let currentFontSize = 16; // 預設基準大小 (px)
+
+        function changeFontSize(step) {
+            currentFontSize += step;
+            if (currentFontSize < 12) currentFontSize = 12; // 最小限制
+            if (currentFontSize > 28) currentFontSize = 28; // 最大限制
+            document.body.style.fontSize = currentFontSize + 'px';
+        }
+
+        function resetFontSize() {
+            currentFontSize = 16;
+            document.body.style.fontSize = '16px';
+        }
+
         function speakText(lang, button) {
             if (!('speechSynthesis' in window)) {
-                alert('您的瀏覽器不支援語音朗讀功能，請使用 Chrome 或 Edge 瀏覽器。');
+                alert('您的瀏覽器不支援語音朗讀功能，請使用手機的 Chrome 或 Safari。');
                 return;
             }
 
-            // 點擊新按鈕前先停止當前播放
             window.speechSynthesis.cancel();
 
             const text = button.getAttribute('data-text');
@@ -336,7 +371,7 @@
             utterance.rate = 0.9;
 
             const originalText = button.innerText;
-            button.innerText = '🔊 播放中...';
+            button.innerText = '🔊 播放中';
 
             utterance.onend = function() {
                 button.innerText = originalText;
@@ -349,7 +384,6 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // 停止朗讀的全域函數
         function stopSpeaking() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
