@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>韓文 72 核心語法隨身查（筆記風）</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Malgun Gothic", sans-serif;
+            background-color: #fafafa;
+            color: #2d3748;
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #3b82f6;
+            font-size: 24px;
+            margin-bottom: 25px;
+        }
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 25px;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 12px;
+            align-items: center;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 200px;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            background-color: #fff;
+        }
+        select:focus, input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* 第三種：筆記列表清單排法 */
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .note-item {
+            position: relative;
+            background: #ffffff;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .note-item:last-child {
+            border-bottom: none;
+        }
+
+        /* 左側圓形編號 */
+        .note-badge {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            background: #eff6ff;
+            color: #3b82f6;
+            font-weight: 700;
+            font-size: 14px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 0 1px #dbeafe;
+        }
+
+        /* 右側主內容區 */
+        .note-content {
+            flex-grow: 1;
+        }
+
+        .note-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .note-meaning {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .note-formula {
+            background: #f8fafc;
+            color: #3b82f6;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* 金句區塊（內嵌精緻小卡） */
+        .note-example-box {
+            background: #fafafa;
+            border-left: 3px solid #3b82f6;
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+        }
+
+        .kr-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 2px;
+        }
+        .kr-ex { 
+            color: #c2410c; 
+            font-weight: bold; 
+            font-size: 16px; 
+        }
+        .speak-btn {
+            background-color: #dbeafe;
+            border: none;
+            color: #1d4ed8;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .speak-btn:hover {
+            background-color: #bfdbfe;
+        }
+        .pinyin-ex { 
+            color: #0284c7; 
+            font-size: 13px; 
+            font-style: italic; 
+            margin-bottom: 2px; 
+        }
+        .zh-ex { 
+            color: #64748b; 
+            font-size: 14px; 
+        }
+        
+        .counter {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+            width: 100%;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🇰🇷 韓文 72 核心語法隨身查</h1>
+    
+    <div class="control-panel">
+        <div class="control-group">
+            <select id="rowSelect" onchange="updateView()">
+                <option value="10">顯示前 10 筆</option>
+                <option value="20">顯示前 20 筆</option>
+                <option value="50">顯示前 50 筆</option>
+                <option value="all" selected>顯示全部 (72筆)</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <input type="text" id="searchInput" placeholder="🔍 搜尋中文、讀音或編號..." oninput="updateView()">
+        </div>
+
+        <div class="counter" id="rowCountDisplay">正在載入數據...</div>
+    </div>
+
+    <!-- 筆記清單容器 -->
+    <div class="notes-list" id="notesContainer">
+        <!-- 數據由 JavaScript 動態生成 -->
+    </div>
+</div>
+
+<script>
+    const rawData = [
+        { n: 1, m: "～是⋯", f: "~은/는 ...입니다", k: "저는 학생입니다.", p: "主呢 學生陰尼大", z: "我是學生。" },
+        { n: 2, m: "有～", f: "~이/가 있습니다", k: "시간이 있습니다.", p: "西甘依 伊司尼大", z: "我有時間。" },
+        { n: 3, m: "〈動詞語尾 ①〉(格式體)", f: "~습니다", k: "열심히 공부합니다.", p: "烈心比 公步哈尼大", z: "努力學習。" },
+        { n: 4, m: "〈形容詞語尾 ①〉(格式體)", f: "~습니다", k: "날씨가 좋습니다.", p: "納西卡 朝司尼大", z: "天氣很好。" },
+        { n: 5, m: "〈動詞語尾 ②〉(意志)", f: "~겠습니다", k: "처음 뵙겠습니다.", p: "秋木 貝給司尼大", z: "初次見面（請多指教）。" },
+        { n: 6, m: "想要～", f: "~고 싶어요", k: "너를 보고 싶어요.", p: "那兒流 坡高 西哦喲", z: "我想見你。" },
+        { n: 7, m: "〈動詞語尾 ③〉(日常體)", f: "~어요", k: "지금 밥을 먹어요.", p: "志金 巴伯 莫哦喲", z: "現在正在吃飯。" },
+        { n: 8, m: "〈形容詞語尾 ②〉(日常體)", f: "~아요", k: "한국어가 아주 좋아요.", p: "韓谷歌 阿主 朝啊喲", z: "韓文非常好。" },
+        { n: 9, m: "〈動詞過去式語尾〉", f: "~았/었어어요", k: "어제 영화를 봤어요.", p: "哦姐 影華流 爸索喲", z: "昨天看了電影。" },
+        { n: 10, m: "〈形容詞過去式語尾〉", f: "~았/었어어요", k: "그때는 정말 바빴어요.", p: "克得呢 定mal 巴爸索喲", z: "那時候真的很忙。" },
+        { n: 11, m: "正在～① (進行)", f: "~고 있어요", k: "음악을 듣고 있어요.", p: "音馬格 特高 伊索喲", z: "我正在聽音樂。" },
+        { n: 12, m: "正在～② (持續)", f: "~아/어 있어요", k: "꽃이 피어 있어요.", p: "古七 皮哦 伊索喲", z: "花兒正盛開著。" },
+        { n: 13, m: "應該會～ / 打算～", f: "~을/ㄹ 거예요", k: "내일은 비가 올 거예요.", p: "內依冷 比卡 奧格耶喲", z: "明天應該會下雨。" },
+        { n: 14, m: "～就可以了", f: "~으면/면 돼요", k: "여기서 기다리면 돼요.", p: "喲基索 基大李蒙古 爹喲", z: "在這裡等就可以了。" },
+        { n: 15, m: "好像～（未來推測）", f: "~을/ㄹ 것 같아요", k: "앞으로 잘될 것 같아요.", p: "阿普路 加特瓜 格卡他喲", z: "感覺以後會發展得很好。" },
+        { n: 16, m: "好像～（過去推測）", f: "~은/ㄴ 것 같아요", k: "그가 벌써 떠난 것 같아요.", p: "格卡 巴西 挑暖 格卡他喲", z: "他好像已經離開了。" },
+        { n: 17, m: "可以～ / 能夠～", f: "~을/ㄹ 수 있어요", k: "우리는 해낼 수 있어요.", p: "烏里呢 黑耐 素 伊索喲", z: "我們一定可以做到的！" },
+        { n: 18, m: "會～（具備技能）", f: "~을/ㄹ 줄 알아요", k: "한국어를 할 줄 알아요.", p: "韓谷歌流 哈主 阿拉喲", z: "我會說韓文。" },
+        { n: 19, m: "曾經～ / 有過經驗", f: "~은/ㄴ 적이 있어요", k: "한국에 간 적이 있어요.", p: "韓谷給 干 積基 伊索喲", z: "我曾去過韓國。" },
+        { n: 20, m: "必須要～", f: "~어야/아야 돼요", k: "꿈을 위해 노력해야 돼요.", p: "固姆 威海 努力希亞 爹喲", z: "為了夢想，必須付出努力。" },
+        { n: 21, m: "～也可以", f: "~어도/아도 돼요", k: "여기 앉아도 돼요?", p: "喲基 安查多 爹喲", z: "可以坐在這裡嗎？" },
+        { n: 22, m: "為了～去", f: "~으러/러 가요", k: "한국어 배우러 가요.", p: "韓谷歌 拜烏拉 加喲", z: "去學韓文。" },
+        { n: 23, m: "好像～（現在推測）", f: "~는 것 같아요", k: "지금 비가 오는 것 같아요.", p: "志金 比卡 歐訥 格卡他喲", z: "現在外面好像在下雨。" },
+        { n: 24, m: "喜歡～", f: "~을/를 좋아해요", k: "당신을 좋아해요.", p: "唐信努 朝阿黑喲", z: "我喜歡你。" },
+        { n: 25, m: "請～① (命令)", f: "~으세요/세요", k: "여기 앉으세요.", p: "喲基 安居細喲", z: "請坐這裡。" },
+        { n: 26, m: "請不要～", f: "~지 마세요", k: "걱정하지 마세요.", p: "闊晶哈지 馬細喲", z: "請不要擔心。" },
+        { n: 27, m: "試著做～看看", f: "~어/아 봐요", k: "일단 한번 해 봐요.", p: "伊丹 含幫 黑 巴喲", z: "先試著做做看吧。" },
+        { n: 28, m: "太過～", f: "너무 ~아요/어요", k: "그 드라마 너무 재미있어요.", p: "格 特拉馬 諾姆 朝米伊索喲", z: "那部韓劇太有趣了。" },
+        { n: 29, m: "看起來～", f: "~아/어 보이다", k: "오늘 정말 행복해 보해요.", p: "歐呢 定mal 項不希 坡黑喲", z: "你今天看起來真的很幸福。" },
+        { n: 30, m: "請（為我）～②", f: "~어/아 주세요", k: "사진 좀 찍어 주세요.", p: "沙金 宗 積歌 主細喲", z: "請幫我拍張照。" },
+        { n: 31, m: "～了 (遺憾/徹底完成)", f: "~어/아 버렸어요", k: "지갑을 잃어버렸어요.", p: "芝嘎布 伊漏博利索喲", z: "把錢包給弄丟了。" },
+        { n: 32, m: "覺得要～ / 下決心", f: "~어야/아야겠어요", k: "이제 열심히 공부해야겠어요.", p: "伊賊 烈心比 公不希亞給索喲", z: "看來現在開始要認真學習了。" },
+        { n: 33, m: "沒有辦法～ / 不能", f: "못 ~어요/아요", k: "오늘은 바빠서 못 가요.", p: "歐呢冷 巴巴索 莫卡喲", z: "今天太忙了不能去。" },
+        { n: 34, m: "很會～ / 擅長", f: "잘 ~어요/아요", k: "그 친구는 노래를 잘 해요.", p: "格 青古呢 努雷流 加勒喲", z: "那位朋友唱歌很厲害。" },
+        { n: 35, m: "不擅長～", f: "잘 못 ~어요/아요", k: "요리를 잘 못 해요.", p: "喲李流 加某 黑喲", z: "我不大擅長做菜。" },
+        { n: 36, m: "要是～就好了", f: "~았/었으면 좋겠어요", k: "다 잘 됐으면 좋겠어요.", p: "達 加得思綿 朝給索喲", z: "要是所有事都能順利就好了。" },
+        { n: 37, m: "決定～", f: "~기로 했어요", k: "매일 운동하기로 했어요.", p: "美伊 溫同哈基洛 黑索喲", z: "決定每天都要運動。" },
+        { n: 38, m: "不想～ / 討厭", f: "~기 싫어요", k: "일하기 정말 싫어요.", p: "伊哈基 定mal 西樓喲", z: "真的好不想工作。" },
+        { n: 39, m: "很容易～", f: "~기 쉬워요", k: "포기하기는 쉬워요.", p: "坡基哈基呢 西窩喲", z: "放棄是很簡單的。" },
+        { n: 40, m: "～很困難 ① (身心累)", f: "~기 힘들어요", k: "혼자 사는 것은 힘들어요.", p: "哄加 沙能 格森 因得勒喲", z: "一個人生活挺不容易的。" },
+        { n: 41, m: "～很困難 ② (進展不順)", f: "잘 안 ~어요/아요", k: "일이 잘 안 돼요.", p: "伊李 加安 爹喲", z: "事情進展得不太順利。" },
+        { n: 42, m: "打算～ / 企圖", f: "~으려고/려고 해요", k: "내년에 유학을 가려고 해요.", p: "內年內 幽哈格 加略高 黑喲", z: "打算明年去留學。" },
+        { n: 43, m: "～似乎比較好", f: "~는 게 좋겠어요", k: "이제 푹 쉬는 게 좋겠어요.", p: "伊賊 福 西呢 格 朝給索喲", z: "現在好好休息一下似乎比較好。" },
+        { n: 44, m: "正在做～之中", f: "~는 중이에요", k: "회의하는 중이에요.", p: "灰伊哈呢 周依耶喲", z: "正在開會當中。" },
+        { n: 45, m: "算是～的那種 / 偏向", f: "~는 편이에요", k: "자주 여행을 가는 편이에요.", p: "家主 喲行歐 加呢 篇依耶喲", z: "我算是經常去旅行的那類人。" },
+        { n: 46, m: "似乎～的樣子", f: "~는 모양이에요", k: "다들 바쁜 모양이에요.", p: "達德 巴奔 謀樣依耶喲", z: "大家好像都很忙的樣子。" },
+        { n: 47, m: "假裝～", f: "~는 척을 해요", k: "알면서도 모르는 척을 해요.", p: "阿綿索多 莫惹呢 車格黑喲", z: "明明知道卻假裝不知道。" },
+        { n: 48, m: "我要～ (強烈意志)", f: "~을/ㄹ 거예요", k: "이번엔 꼭 성공할 거예요.", p: "伊奔音 郭 成公哈 格耶喲", z: "這一次我一定會成功。" },
+        { n: 49, m: "預計做～", f: "~을/ㄹ 생각이에요", k: "새로운 일을 시작할 생각이에요.", p: "些落溫 伊流 西扎卡 格 生嘎依耶喲", z: "預計要開始一項新的工作。" },
+        { n: 50, m: "說不定～", f: "~을/ㄹ지도 몰라요", k: "그것이 사실일지도 몰라요.", p: "格高西 沙西里芝多 莫拉喲", z: "那說不定是事實。" },
+        { n: 51, m: "說不定已經～", f: "~았/었을지도 몰라요", k: "벌써 끝났을지도 몰라요.", p: "巴西 格納色芝多 莫拉喲", z: "說不定早就已經結束了。" },
+        { n: 52, m: "不可能～ / 絕無此理", f: "~을/ㄹ 리가 없어요", k: "그가 거짓말을 했을 리가 없어요.", p: "格卡 歌積嘛留 黑色 理嘎 歐索喲", z: "他不可能說謊。" },
+        { n: 53, m: "只能～ / 不得不", f: "~을/ㄹ 수 밖에 없어요", k: "믿고 기다릴 수밖에 없어요.", p: "密高 基達里 素巴克 歐索喲", z: "除了相信並等待之外別無他法。" },
+        { n: 54, m: "～是當然的", f: "~을/ㄹ 수 밖에 없어요", k: "노력하면 성공할 수밖에 없어요.", p: "努力哈綿 成公哈 素巴克 歐索喲", z: "努力的話，成功是理所當然的。" },
+        { n: 55, m: "要是當時～就好了", f: "~을/ㄹ 걸 그랬어요", k: "그때 말할 걸 그랬어요.", p: "格得 馬哈格 格雷索喲", z: "要是當時有說出來就好了。" },
+        { n: 56, m: "應該是～吧 (輕微反駁)", f: "~을/ㄹ걸요", k: "그 영화는 이미 끝났을걸요.", p: "格 影華呢 伊米 格納色格喲", z: "那部電影應該已經下片了吧。" },
+        { n: 57, m: "原本以為～ (相反)", f: "~을/ㄹ 줄 알았어요", k: "네가 올 줄 알았어.", p: "尼卡 奧主 阿拉索", z: "我原本以為你會來（結果沒來）。" },
+        { n: 58, m: "沒想到～", f: "~을/ㄹ 줄 몰랐어요", k: "이렇게 힘들 줄 몰랐어요.", p: "伊勒基 因得主 莫拉索喲", z: "真沒想到會這麼辛苦。" },
+        { n: 59, m: "聽說～① (傳聞)", f: "~대요 / 는대요", k: "한국 겨울은 진짜 춥대요.", p: "韓谷 給歐能 進扎 秋爹喲", z: "聽說韓國的冬天超級冷。" },
+        { n: 60, m: "聽說～② (名詞傳聞)", f: "~(이)래요", k: "그 사람이 유명한 의사래요.", p: "格 沙拉米 流猛漢 依沙雷喲", z: "聽說那個人是一位很有名的醫生。" },
+        { n: 61, m: "一直～ / 只～", f: "名詞 + 만 ~아요/어요", k: "하루 종일 게임만 해요.", p: "哈魯 宗伊 蓋依曼 黑喲", z: "一整天就只知道玩遊戲。" },
+        { n: 62, m: "只要～就可以", f: "名詞 + 만 ~되면 돼요", k: "너만 있으면 돼.", p: "那曼 伊西缪 爹", z: "只要有你在身邊就可以。" },
+        { n: 63, m: "只是～而已", f: "~을/ㄹ 뿐이에요", k: "저는 제 할 일을 했을 뿐이에요.", p: "主呢 謝 哈里流 黑色 不依耶喲", z: "我只是做了我該做的事而已。" },
+        { n: 64, m: "〈敘述語尾〉(書面)", f: "~ㄴ다/는다", k: "드디어 집에 간다!", p: "得地歐 吉貝 甘達", z: "終於要回家囉！" },
+        { n: 65, m: "非常～ / 難以言喻", f: "얼마나 ~지 몰라요", k: "네가 있어서 얼마나 다행인지 몰라.", p: "尼卡 伊西索 歐馬納 他興因芝 莫拉", z: "有你在，真不知道有多麼慶幸。" },
+        { n: 66, m: "變得～ (狀態轉變)", f: "~어/아져요", k: "날씨가 점점 따뜻해져요.", p: "納西卡 宗宗 他得希潔喲", z: "天氣漸漸變得溫暖了。" },
+        { n: 67, m: "稱之為～〈引用〉", f: "~(이)라고 해요", k: "이것을 사랑이라고 해요.", p: "伊哥瑟 沙朗依拉高 黑喲", z: "這就被稱之為愛。" },
+        { n: 68, m: "什麼時候～？", f: "언제 ~?", k: "우리 언제 만날까요?", p: "烏里 歐恩傑 曼納個喲", z: "我們什麼時候見面呢？" },
+        { n: 69, m: "哪裡～？", f: "어디 ~?", k: "지금 어디에 있어요?", p: "志金 歐地耶 伊索喲", z: "現在在哪裡？" },
+        { n: 70, m: "誰～？", f: "누구 ~?", k: "그 사람은 누구예요?", p: "格 沙拉門 努古耶喲", z: "那個人是誰？" },
+        { n: 71, m: "～什麼～？", f: "뭐 ~?", k: "지금 뭐 해요?", p: "志金 慕 黑喲", z: "現在在做什麼？" },
+        { n: 72, m: "～如何～？", f: "어떻게 ~?", k: "이 문제를 어떻게 해결할까요?", p: "伊 木節流 歐透格 黑皆哈個喲", z: "這個問題該如何解決呢？" }
+    ];
+
+    function speakKorean(text) {
+        if (!('speechSynthesis' in window)) {
+            alert('您的瀏覽器不支援語音朗讀功能，請使用 Chrome、Edge 或 Safari。');
+            return;
+        }
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function updateView() {
+        const rowLimit = document.getElementById('rowSelect').value;
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        const container = document.getElementById('notesContainer');
+        
+        let filteredData = rawData.filter(item => {
+            return (
+                item.n.toString().includes(keyword) ||
+                item.m.toLowerCase().includes(keyword) ||
+                item.f.toLowerCase().includes(keyword) ||
+                item.k.toLowerCase().includes(keyword) ||
+                item.p.toLowerCase().includes(keyword) ||
+                item.z.toLowerCase().includes(keyword)
+            );
+        });
+
+        let displayData = filteredData;
+        if (rowLimit !== 'all') {
+            const limit = parseInt(rowLimit, 10);
+            displayData = filteredData.slice(0, limit);
+        }
+
+        container.innerHTML = '';
+        displayData.forEach(item => {
+            const noteItem = document.createElement('div');
+            noteItem.className = 'note-item';
+            noteItem.innerHTML = `
+                <div class="note-badge">${item.n}</div>
+                <div class="note-content">
+                    <div class="note-header">
+                        <span class="note-meaning">${escapeHtml(item.m)}</span>
+                        <span class="note-formula">${escapeHtml(item.f)}</span>
+                    </div>
+                    <div class="note-example-box">
+                        <div class="kr-container">
+                            <span class="kr-ex">${escapeHtml(item.k)}</span>
+                            <button class="speak-btn" onclick="speakKorean('${escapeHtml(item.k)}')">🔊 朗讀</button>
+                        </div>
+                        <div class="pinyin-ex">💡 讀音：${escapeHtml(item.p)}</div>
+                        <div class="zh-ex">${escapeHtml(item.z)}</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(noteItem);
+        });
+
+        document.getElementById('rowCountDisplay').innerText = `顯示 ${displayData.length} 筆 (共符合 ${filteredData.length} 筆)`;
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    updateView();
+</script>
+
+</body>
+</html>
