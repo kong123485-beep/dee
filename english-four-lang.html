@@ -518,9 +518,11 @@
       stopSpeaking();
     }
 
-    // iPhone 修正（收埋喺入面，外觀不變）
-    // iPhone 冇 yue-Hant-HK 呢個名，啲聲叫 zh-HK / Cantonese，搵唔到就會跌去普通話
-    // 而且 iPhone 啲聲要等 onvoiceschanged 先嚟
+    // iPhone + Android 兩邊都啱嘅修正（外觀不變）
+    // 問題根源：
+    // iPhone：廣東話叫 zh-HK / Cantonese，冇 yue-Hant-HK
+    // Android：普通話可能叫 zh-CN / cmn-CN / cmn-Hans-CN，唔一定係 zh-CN
+    // 舊版搵唔到就返 null，再硬寫 u.lang = yue-Hant-HK，所以 Android 揀普通話都變廣東話
     function isCantoneseVoice(v) {
       const lang = (v.lang || '').toLowerCase();
       const name = (v.name || '').toLowerCase();
@@ -528,28 +530,48 @@
         || lang === 'zh-hk' || name.includes('cantonese') || name.includes('yue')
         || name.includes('廣東') || name.includes('粤') || name.includes('粵');
     }
+    function isMandarinVoice(v) {
+      const lang = (v.lang || '').toLowerCase();
+      const name = (v.name || '').toLowerCase();
+      if (isCantoneseVoice(v)) return false; // 千祈唔好將廣東話當普通話
+      return lang === 'zh-cn' || lang === 'cmn-cn' || lang === 'cmn-hans-cn' || lang === 'cmn-hans'
+        || name.includes('mandarin') || name.includes('putonghua') || name.includes('普通话') || name.includes('普通話')
+        || (lang.startsWith('cmn') && !name.includes('taiwan'));
+    }
+    function isTaiwanVoice(v) {
+      const lang = (v.lang || '').toLowerCase();
+      const name = (v.name || '').toLowerCase();
+      if (isCantoneseVoice(v)) return false;
+      return lang === 'zh-tw' || lang === 'cmn-tw' || lang === 'cmn-hant-tw'
+        || name.includes('taiwan') || name.includes('台灣') || name.includes('台湾');
+    }
     function pickVoice(lang) {
       const vs = window.speechSynthesis.getVoices() || [];
       if (!vs.length) return null;
       if (lang === 'zh-TW' || lang === 'zh-HK' || lang === 'zh-CN') {
+        // 睇返用戶真係揀咗咩，唔好硬寫死
         if (zhVoice === 'yue-Hant-HK' || zhVoice === 'zh-HK') {
-          // 廣東話：搵晒所有可能嘅名，搵唔到就返 null，唔好跌去普通話
-          return vs.find(isCantoneseVoice)
-            || vs.find(x => (x.lang || '').toLowerCase() === 'zh-hk')
+          return vs.find(isCantoneseVoice) || null;
+        }
+        if (zhVoice === 'zh-CN') {
+          return vs.find(isMandarinVoice)
+            || vs.find(x => (x.lang || '').toLowerCase() === 'zh-cn')
+            || vs.find(x => (x.lang || '').toLowerCase().startsWith('zh') && !isCantoneseVoice(x) && !isTaiwanVoice(x))
             || null;
         }
-        if (zhVoice === 'zh-CN') return vs.find(x => (x.lang || '').toLowerCase() === 'zh-cn') || null;
-        if (zhVoice === 'zh-TW') return vs.find(x => (x.lang || '').toLowerCase() === 'zh-tw') || null;
+        if (zhVoice === 'zh-TW') {
+          return vs.find(isTaiwanVoice)
+            || vs.find(x => (x.lang || '').toLowerCase() === 'zh-tw')
+            || null;
+        }
       }
       const p = lang.split('-')[0];
       return vs.find(x => x.lang === lang)
         || vs.find(x => x.lang && x.lang.toLowerCase().startsWith(p))
         || null;
     }
-    // 預先 load 定啲聲，等 iPhone 啲聲嚟咗先用
     if ('speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = function() {};
-      // 觸發一次，等 iPhone load 啲聲
       window.speechSynthesis.getVoices();
     }
 
@@ -572,7 +594,11 @@
       u.rate = .9;
       const v = pickVoice(lang);
       if (v) { u.voice = v; u.lang = v.lang; }
-      else { u.lang = (lang === 'zh-TW' ? 'yue-Hant-HK' : lang); }
+      else {
+        // 啲聲未 load 完都好，至少話返俾系統知用戶揀咗咩
+        // 之前呢度硬寫 yue-Hant-HK，所以 Android 揀普通話都會變廣東話
+        u.lang = (lang === 'zh-TW' ? zhVoice : lang);
+      }
       el.classList.add('ring-2', 'ring-blue-400');
       u.onend = () => el.classList.remove('ring-2', 'ring-blue-400');
       u.onerror = () => el.classList.remove('ring-2', 'ring-blue-400');
