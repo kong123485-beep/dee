@@ -518,19 +518,39 @@
       stopSpeaking();
     }
 
+    // iPhone 修正（收埋喺入面，外觀不變）
+    // iPhone 冇 yue-Hant-HK 呢個名，啲聲叫 zh-HK / Cantonese，搵唔到就會跌去普通話
+    // 而且 iPhone 啲聲要等 onvoiceschanged 先嚟
+    function isCantoneseVoice(v) {
+      const lang = (v.lang || '').toLowerCase();
+      const name = (v.name || '').toLowerCase();
+      return lang === 'yue-hant-hk' || lang === 'yue-hk' || lang.startsWith('yue')
+        || lang === 'zh-hk' || name.includes('cantonese') || name.includes('yue')
+        || name.includes('廣東') || name.includes('粤') || name.includes('粵');
+    }
     function pickVoice(lang) {
       const vs = window.speechSynthesis.getVoices() || [];
+      if (!vs.length) return null;
       if (lang === 'zh-TW' || lang === 'zh-HK' || lang === 'zh-CN') {
-        return vs.find(x => x.lang === zhVoice)
-          || vs.find(x => x.lang && x.lang.toLowerCase().startsWith(zhVoice.split('-')[0].toLowerCase()) && x.lang.toLowerCase().includes('hk'))
-          || vs.find(x => x.lang === lang)
-          || vs.find(x => x.lang && x.lang.toLowerCase().startsWith('zh'))
-          || null;
+        if (zhVoice === 'yue-Hant-HK' || zhVoice === 'zh-HK') {
+          // 廣東話：搵晒所有可能嘅名，搵唔到就返 null，唔好跌去普通話
+          return vs.find(isCantoneseVoice)
+            || vs.find(x => (x.lang || '').toLowerCase() === 'zh-hk')
+            || null;
+        }
+        if (zhVoice === 'zh-CN') return vs.find(x => (x.lang || '').toLowerCase() === 'zh-cn') || null;
+        if (zhVoice === 'zh-TW') return vs.find(x => (x.lang || '').toLowerCase() === 'zh-tw') || null;
       }
       const p = lang.split('-')[0];
       return vs.find(x => x.lang === lang)
         || vs.find(x => x.lang && x.lang.toLowerCase().startsWith(p))
         || null;
+    }
+    // 預先 load 定啲聲，等 iPhone 啲聲嚟咗先用
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = function() {};
+      // 觸發一次，等 iPhone load 啲聲
+      window.speechSynthesis.getVoices();
     }
 
     // 關鍵：朗讀前刪走 <rt>，唔讀振假名
@@ -549,10 +569,10 @@
       const t = cleanTextForSpeech(el);
       if (!t) return;
       const u = new SpeechSynthesisUtterance(t);
-      u.lang = (lang === 'zh-TW' ? zhVoice : lang);
       u.rate = .9;
       const v = pickVoice(lang);
-      if (v) u.voice = v;
+      if (v) { u.voice = v; u.lang = v.lang; }
+      else { u.lang = (lang === 'zh-TW' ? 'yue-Hant-HK' : lang); }
       el.classList.add('ring-2', 'ring-blue-400');
       u.onend = () => el.classList.remove('ring-2', 'ring-blue-400');
       u.onerror = () => el.classList.remove('ring-2', 'ring-blue-400');
